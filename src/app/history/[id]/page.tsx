@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/auth";
 import AnalysisView from "@/components/AnalysisView";
 import DeleteButton from "./DeleteButton";
 import type { AnalysisResult } from "@/lib/types";
@@ -19,10 +20,13 @@ export default async function HistoryDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const authSession = await auth();
+  if (!authSession?.user) redirect("/login");
+
   const { id } = await params;
   const session = await prisma.analysisSession.findUnique({ where: { id } });
 
-  if (!session) notFound();
+  if (!session || session.userId !== authSession.user.id) notFound();
 
   const result = session.resultJson as unknown as AnalysisResult;
 

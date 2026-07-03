@@ -1,12 +1,22 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/auth";
 import { analyzeConversation } from "@/lib/claude";
 import type { AnalyzeRequest, StoredSession } from "@/lib/types";
 
-// 무료 하루 분석 횟수 제한 (MVP용 간단 버전 — 전체 기준)
+// 무료 하루 분석 횟수 제한 (사용자 1인 기준)
 const FREE_DAILY_LIMIT = 3;
 
 export async function POST(req: Request) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json(
+      { error: "로그인이 필요해요." },
+      { status: 401 }
+    );
+  }
+  const userId = session.user.id;
+
   let body: AnalyzeRequest;
   try {
     body = (await req.json()) as AnalyzeRequest;
@@ -28,11 +38,11 @@ export async function POST(req: Request) {
     );
   }
 
-  // 하루 무료 제한 체크 (오늘 자정 기준)
+  // 하루 무료 제한 체크 (오늘 자정 기준, 사용자별)
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
   const todayCount = await prisma.analysisSession.count({
-    where: { createdAt: { gte: startOfDay } },
+    where: { userId, createdAt: { gte: startOfDay } },
   });
   if (todayCount >= FREE_DAILY_LIMIT) {
     return NextResponse.json(
@@ -60,8 +70,9 @@ export async function POST(req: Request) {
     rawText.split("\n").find((l) => l.trim().length > 0)?.slice(0, 40) ||
     "제목 없는 분석";
 
-  const session = await prisma.analysisSession.create({
+  const stored = await prisma.analysisSession.create({
     data: {
+      userId,
       title,
       rawText,
       score: result.score,
@@ -76,12 +87,12 @@ export async function POST(req: Request) {
   });
 
   const payload: StoredSession = {
-    id: session.id,
-    title: session.title,
-    rawText: session.rawText,
-    score: session.score,
+    id: stored.id,
+    title: stored.title,
+    rawText: stored.rawText,
+    score: stored.score,
     result,
-    createdAt: session.createdAt.toISOString(),
+    createdAt: stored.createdAt.toISOString(),
   };
 
   return NextResponse.json(payload, { status: 201 });

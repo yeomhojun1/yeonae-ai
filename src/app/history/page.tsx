@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { auth, signIn } from "@/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +18,31 @@ function scoreBadge(score: number) {
 }
 
 export default async function HistoryPage() {
+  const session = await auth();
+
+  if (!session?.user) {
+    return (
+      <div className="mx-auto max-w-md space-y-4 py-10 text-center">
+        <h1 className="text-xl font-extrabold text-slate-800">분석 기록</h1>
+        <p className="text-sm text-slate-500">
+          로그인하면 내 분석 기록을 볼 수 있어요.
+        </p>
+        <form
+          action={async () => {
+            "use server";
+            await signIn("kakao", { redirectTo: "/history" });
+          }}
+        >
+          <button className="rounded-xl bg-[#FEE500] px-4 py-2.5 font-bold text-[#3C1E1E] hover:brightness-95">
+            💬 카카오로 로그인
+          </button>
+        </form>
+      </div>
+    );
+  }
+
   const sessions = await prisma.analysisSession.findMany({
+    where: { userId: session.user.id },
     orderBy: { createdAt: "desc" },
     take: 50,
     select: { id: true, title: true, score: true, createdAt: true },

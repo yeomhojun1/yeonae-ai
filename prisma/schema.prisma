@@ -10,27 +10,71 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id        String   @id @default(cuid())
-  email     String?  @unique
-  provider  String?
-  createdAt DateTime @default(now())
+// ===== Auth.js (NextAuth) 표준 모델 =====
 
-  sessions AnalysisSession[]
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+
+  accounts         Account[]
+  sessions         Session[]
+  analysisSessions AnalysisSession[]
 }
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ===== 서비스 도메인 모델 =====
 
 model AnalysisSession {
   id         String   @id @default(cuid())
-  userId     String?
+  userId     String
   title      String
-  rawText    String
+  rawText    String   @db.Text
   // Claude 분석 결과 전체를 JSON으로 저장
   resultJson Json
   // 대화 흐름/호감도 점수 (0~100)
   score      Int
   createdAt  DateTime @default(now())
 
-  user             User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   replySuggestions ReplySuggestion[]
 
   @@index([userId])
@@ -41,7 +85,7 @@ model ReplySuggestion {
   id        String   @id @default(cuid())
   sessionId String
   tone      String
-  content   String
+  content   String   @db.Text
   createdAt DateTime @default(now())
 
   session AnalysisSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)

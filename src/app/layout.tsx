@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import AuthButtons from "@/components/AuthButtons";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -29,6 +30,7 @@ export default function RootLayout({
               <Link href="/history" className="hover:text-brand-600">
                 기록
               </Link>
+              <AuthButtons />
             </nav>
           </div>
         </header>
