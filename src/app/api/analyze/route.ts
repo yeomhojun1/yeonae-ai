@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { analyzeConversation } from "@/lib/claude";
+import { indexSession } from "@/lib/rag";
 import type { AnalyzeRequest, StoredSession } from "@/lib/types";
 
 // 무료 하루 분석 횟수 제한 (사용자 1인 기준)
@@ -85,6 +86,14 @@ export async function POST(req: Request) {
       },
     },
   });
+
+  // RAG 인덱싱: 대화를 청킹·임베딩해 저장 (히스토리 의미 검색용).
+  // 실패해도 분석 결과 반환은 막지 않는다 (부가 기능).
+  try {
+    await indexSession(stored.id, userId, rawText);
+  } catch (err) {
+    console.error("[analyze] RAG 인덱싱 실패:", err);
+  }
 
   const payload: StoredSession = {
     id: stored.id,

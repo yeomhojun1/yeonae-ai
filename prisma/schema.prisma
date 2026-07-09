@@ -74,11 +74,30 @@ model AnalysisSession {
   score      Int
   createdAt  DateTime @default(now())
 
-  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user             User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   replySuggestions ReplySuggestion[]
+  chunks           ConversationChunk[]
 
   @@index([userId])
   @@index([createdAt])
+}
+
+// RAG용: 대화를 조각(청킹)내고 각 조각의 의미 임베딩(벡터)을 저장.
+// 학습용 심플 버전 — 임베딩을 Float[]로 저장하고 코사인 유사도는 JS에서 계산.
+// (프로덕션에선 pgvector로 업그레이드 예정)
+model ConversationChunk {
+  id        String   @id @default(cuid())
+  sessionId String
+  userId    String // 검색을 사용자 범위로 좁히기 위해 중복 저장
+  index     Int // 원본 대화에서 조각의 순서
+  text      String   @db.Text // 조각 원문 (LLM에 근거로 넣을 실제 텍스트)
+  embedding Float[] // 의미 좌표 (multilingual-e5-small = 384차원)
+  createdAt DateTime @default(now())
+
+  session AnalysisSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([sessionId])
 }
 
 model ReplySuggestion {

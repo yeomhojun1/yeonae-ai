@@ -30,6 +30,9 @@ export default function RootLayout({
               <Link href="/history" className="hover:text-brand-600">
                 기록
               </Link>
+              <Link href="/search" className="hover:text-brand-600">
+                검색
+              </Link>
               <AuthButtons />
             </nav>
           </div>
