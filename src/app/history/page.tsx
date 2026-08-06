@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { auth, signIn } from "@/auth";
+import { auth } from "@/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -27,16 +27,12 @@ export default async function HistoryPage() {
         <p className="text-sm text-slate-500">
           로그인하면 내 분석 기록을 볼 수 있어요.
         </p>
-        <form
-          action={async () => {
-            "use server";
-            await signIn("kakao", { redirectTo: "/history" });
-          }}
+        <Link
+          href="/login"
+          className="inline-block rounded-xl bg-brand-500 px-4 py-2.5 font-bold text-white hover:bg-brand-600"
         >
-          <button className="rounded-xl bg-[#FEE500] px-4 py-2.5 font-bold text-[#3C1E1E] hover:brightness-95">
-            💬 카카오로 로그인
-          </button>
-        </form>
+          로그인하기
+        </Link>
       </div>
     );
   }

@@ -8,3 +8,10 @@ declare module "next-auth" {
     } & DefaultSession["user"];
   }
 }
+
+// JWT 타입 확장: 토큰에 사용자 id 저장
+declare module "next-auth/jwt" {
+  interface JWT {
+    id?: string;
+  }
+}

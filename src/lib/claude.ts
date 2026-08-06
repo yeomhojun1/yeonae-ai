@@ -1,7 +1,9 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { AnalysisResult } from "./types";
 
-const MODEL = "claude-opus-4-8";
+// 운영비 절감을 위해 Sonnet 5 사용(Opus 대비 입력·출력 단가 약 40%↓, 8/31까지 인트로가 더 저렴).
+// adaptive thinking·structured output 모두 지원해 아래 호출부는 그대로 호환된다.
+const MODEL = "claude-sonnet-5";
 
 // 분석 결과를 강제할 JSON 스키마 (Structured Outputs)
 const ANALYSIS_SCHEMA = {
@@ -90,6 +92,11 @@ export async function analyzeConversation(
   const apiKey = process.env.ANTHROPIC_API_KEY;
 
   if (!apiKey) {
+    // 프로덕션에서 키가 없으면 목업(가짜) 결과를 조용히 내보내지 않는다.
+    // 사용자가 예시 결과를 진짜 분석으로 오인하는 걸 막기 위함.
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("ANTHROPIC_API_KEY가 설정되지 않았습니다.");
+    }
     return mockAnalysis(rawText);
   }
 

@@ -18,19 +18,19 @@ export default function RootLayout({
     <html lang="ko">
       <body>
         <header className="border-b border-rose-100 bg-white/70 backdrop-blur sticky top-0 z-10">
-          <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
-            <Link href="/" className="flex items-center gap-2 font-bold text-lg">
+          <div className="mx-auto flex max-w-3xl items-center justify-between gap-2 px-4 py-3">
+            <Link href="/" className="flex shrink-0 items-center gap-1.5 text-lg font-bold">
               <span aria-hidden>💘</span>
               <span className="text-brand-600">연애 분석 AI</span>
             </Link>
-            <nav className="flex items-center gap-4 text-sm text-slate-600">
-              <Link href="/" className="hover:text-brand-600">
+            <nav className="flex items-center gap-3 text-sm text-slate-600 sm:gap-4">
+              <Link href="/" className="hidden hover:text-brand-600 sm:inline">
                 분석하기
               </Link>
               <Link href="/history" className="hover:text-brand-600">
                 기록
               </Link>
-              <Link href="/search" className="hover:text-brand-600">
+              <Link href="/search" className="hidden hover:text-brand-600 sm:inline">
                 검색
               </Link>
               <AuthButtons />
@@ -38,8 +38,20 @@ export default function RootLayout({
           </div>
         </header>
         <main className="mx-auto max-w-3xl px-4 py-8">{children}</main>
-        <footer className="mx-auto max-w-3xl px-4 py-10 text-center text-xs text-slate-400">
-          AI 분석은 참고용이에요. 최종 판단은 본인의 몫! · 대화 내용은 분석 목적으로만 사용됩니다.
+        <footer className="mx-auto max-w-3xl space-y-2 px-4 py-10 text-center text-xs text-slate-400">
+          <p>
+            AI 분석은 참고용이에요. 최종 판단은 본인의 몫! · 대화 내용은 분석
+            목적으로만 사용됩니다.
+          </p>
+          <p className="flex items-center justify-center gap-3">
+            <Link href="/terms" className="hover:text-brand-600">
+              이용약관
+            </Link>
+            <span aria-hidden>·</span>
+            <Link href="/privacy" className="hover:text-brand-600">
+              개인정보 처리방침
+            </Link>
+          </p>
         </footer>
       </body>
     </html>

@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { searchChunks } from "@/lib/rag";
+import { searchChunksPg } from "@/lib/rag";
 
+// ===== [마일스톤2: 검색] — 검색 API 입구(route) =====
 // 히스토리 의미 검색: 질문을 받아 사용자의 과거 대화 조각 중 관련 top-k를 반환.
+// 화면(search/page.tsx)이 fetch로 여기를 부르고, 여기가 rag.ts의 searchChunksPg를 부른다.
 export async function POST(req: Request) {
   const session = await auth();
   if (!session?.user) {
@@ -27,6 +29,6 @@ export async function POST(req: Request) {
     );
   }
 
-  const hits = await searchChunks(userId, query, k);
+  const hits = await searchChunksPg(userId, query, k);
   return NextResponse.json({ query, hits });
 }

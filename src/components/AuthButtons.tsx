@@ -1,4 +1,5 @@
-import { auth, signIn, signOut } from "@/auth";
+import Link from "next/link";
+import { auth, signOut } from "@/auth";
 
 export default async function AuthButtons() {
   const session = await auth();
@@ -6,9 +7,12 @@ export default async function AuthButtons() {
   if (session?.user) {
     return (
       <div className="flex items-center gap-2 text-sm">
-        <span className="hidden text-slate-600 sm:inline">
+        <Link
+          href="/account"
+          className="hidden text-slate-600 hover:text-brand-600 sm:inline"
+        >
           {session.user.name ?? "회원"}님
-        </span>
+        </Link>
         <form
           action={async () => {
             "use server";
@@ -24,15 +28,11 @@ export default async function AuthButtons() {
   }
 
   return (
-    <form
-      action={async () => {
-        "use server";
-        await signIn("kakao", { redirectTo: "/" });
-      }}
+    <Link
+      href="/login"
+      className="rounded-lg bg-brand-500 px-3 py-1.5 text-sm font-semibold text-white hover:bg-brand-600"
     >
-      <button className="rounded-lg bg-[#FEE500] px-3 py-1.5 text-sm font-semibold text-[#3C1E1E] hover:brightness-95">
-        카카오 로그인
-      </button>
-    </form>
+      로그인
+    </Link>
   );
 }

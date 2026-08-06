@@ -1,4 +1,7 @@
-"use client";
+// ===== [마일스톤2: 검색] — 검색 화면(React 컴포넌트) =====
+// 사용자가 질문을 입력 → fetch로 /api/rag/search 호출 → 결과를 화면에 표시.
+// React 핵심: useState(상태) / onClick·onKeyDown(이벤트) / fetch(서버요청) / {조건 && ...}(조건부 표시)
+"use client"; // 이 파일은 브라우저에서 도는 컴포넌트 (상태·클릭 등 상호작용 담당)
 
 import { useState } from "react";
 import Link from "next/link";

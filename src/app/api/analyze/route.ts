@@ -3,10 +3,11 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { analyzeConversation } from "@/lib/claude";
 import { indexSession } from "@/lib/rag";
+import { FREE_DAILY_LIMIT, seoulDayKey } from "@/lib/usage";
 import type { AnalyzeRequest, StoredSession } from "@/lib/types";
 
-// 무료 하루 분석 횟수 제한 (사용자 1인 기준)
-const FREE_DAILY_LIMIT = 3;
+// 관계 메모 최대 길이 (프롬프트 주입/토큰 낭비 방지)
+const RELATIONSHIP_MAX = 200;
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -39,13 +40,29 @@ export async function POST(req: Request) {
     );
   }
 
-  // 하루 무료 제한 체크 (오늘 자정 기준, 사용자별)
-  const startOfDay = new Date();
-  startOfDay.setHours(0, 0, 0, 0);
-  const todayCount = await prisma.analysisSession.count({
-    where: { userId, createdAt: { gte: startOfDay } },
+  const relationship = (body.relationship ?? "").trim();
+  if (relationship.length > RELATIONSHIP_MAX) {
+    return NextResponse.json(
+      { error: `관계 상태 메모는 ${RELATIONSHIP_MAX}자 이하로 입력해주세요.` },
+      { status: 400 }
+    );
+  }
+
+  // 하루 무료 제한 — Claude 호출 "전에" 원자적으로 한 슬롯을 선점한다.
+  // upsert-increment 는 같은 (userId, day) 행에 대해 DB가 직렬화하므로,
+  // 동시 요청이 와도 각기 다른 count 값을 돌려받아 한도 초과분만 정확히 거른다.
+  const day = seoulDayKey();
+  const usage = await prisma.dailyUsage.upsert({
+    where: { userId_day: { userId, day } },
+    create: { userId, day, count: 1 },
+    update: { count: { increment: 1 } },
   });
-  if (todayCount >= FREE_DAILY_LIMIT) {
+  if (usage.count > FREE_DAILY_LIMIT) {
+    // 한도 초과 — 방금 올린 카운트를 되돌리고 거절
+    await prisma.dailyUsage.update({
+      where: { userId_day: { userId, day } },
+      data: { count: { decrement: 1 } },
+    });
     return NextResponse.json(
       {
         error: `무료 분석은 하루 ${FREE_DAILY_LIMIT}회까지예요. 내일 다시 이용하거나 유료 플랜을 준비 중이에요.`,
@@ -56,9 +73,16 @@ export async function POST(req: Request) {
 
   let result;
   try {
-    result = await analyzeConversation(rawText, body.relationship);
+    result = await analyzeConversation(rawText, relationship);
   } catch (err) {
     console.error("[analyze] Claude 호출 실패:", err);
+    // 호출 자체가 실패했으면 선점한 슬롯을 환불(사용자가 재시도 가능하도록)
+    await prisma.dailyUsage
+      .update({
+        where: { userId_day: { userId, day } },
+        data: { count: { decrement: 1 } },
+      })
+      .catch(() => {});
     return NextResponse.json(
       { error: "분석 중 오류가 발생했어요. 잠시 후 다시 시도해주세요." },
       { status: 502 }
@@ -87,7 +111,8 @@ export async function POST(req: Request) {
     },
   });
 
-  // RAG 인덱싱: 대화를 청킹·임베딩해 저장 (히스토리 의미 검색용).
+  // ===== [마일스톤1: 청킹·임베딩·저장] — 분석 저장 시 자동 인덱싱 =====
+  // 대화를 청킹·임베딩해 저장(indexSession) → 나중에 히스토리 의미 검색이 가능해짐.
   // 실패해도 분석 결과 반환은 막지 않는다 (부가 기능).
   try {
     await indexSession(stored.id, userId, rawText);

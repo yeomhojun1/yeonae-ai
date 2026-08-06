@@ -18,11 +18,32 @@ model User {
   email         String?   @unique
   emailVerified DateTime?
   image         String?
+  // 이메일/비밀번호 회원가입용 bcrypt 해시. 소셜 로그인(카카오 등) 사용자는 null.
+  passwordHash  String?
   createdAt     DateTime  @default(now())
+  // RAG 재인덱싱 남용 방지용 쿨다운 기준 시각
+  lastReindexAt DateTime?
 
   accounts         Account[]
   sessions         Session[]
   analysisSessions AnalysisSession[]
+  dailyUsages      DailyUsage[]
+}
+
+// 하루 무료 분석 횟수를 원자적으로 세는 카운터.
+// 분석 세션 수를 세는 방식은 (count → Claude 호출 → create) 사이에 원자성이 없어
+// 동시 요청 시 한도를 넘겨 Claude가 여러 번 과금될 수 있었다.
+// 이 카운터를 Claude 호출 "전에" upsert-increment 로 선점해 동시요청 과금을 막는다.
+model DailyUsage {
+  id     String @id @default(cuid())
+  userId String
+  day    String // "YYYY-MM-DD" (Asia/Seoul 기준)
+  count  Int    @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, day])
+  @@index([userId])
 }
 
 model Account {
@@ -82,16 +103,18 @@ model AnalysisSession {
   @@index([createdAt])
 }
 
-// RAG용: 대화를 조각(청킹)내고 각 조각의 의미 임베딩(벡터)을 저장.
-// 학습용 심플 버전 — 임베딩을 Float[]로 저장하고 코사인 유사도는 JS에서 계산.
-// (프로덕션에선 pgvector로 업그레이드 예정)
+// ===== [마일스톤1: 청킹·임베딩·저장] — 저장할 데이터 모델 =====
+// 대화를 조각(청킹)내고 각 조각의 의미 임베딩(벡터)을 저장하는 테이블.
+// embedding(Float[]) = 마일스톤1의 학습용 저장 / embedding_vec(vector) = 마일스톤5의 pgvector 저장.
 model ConversationChunk {
   id        String   @id @default(cuid())
   sessionId String
   userId    String // 검색을 사용자 범위로 좁히기 위해 중복 저장
   index     Int // 원본 대화에서 조각의 순서
   text      String   @db.Text // 조각 원문 (LLM에 근거로 넣을 실제 텍스트)
-  embedding Float[] // 의미 좌표 (multilingual-e5-small = 384차원)
+  embedding Float[] // 의미 좌표 (multilingual-e5-small = 384차원) — 학습용 JS 코사인
+  // pgvector 컬럼 — raw SQL로 관리(Prisma는 vector 타입 미지원). db push가 삭제하지 않도록 선언만.
+  embeddingVec Unsupported("vector(384)")? @map("embedding_vec")
   createdAt DateTime @default(now())
 
   session AnalysisSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
