@@ -6,7 +6,7 @@ import type { AnalyzeRequest, AnalysisResult, StoredSession } from "@/lib/types"
 //  실제 분석은 로그인 후 /api/analyze 에서만 수행됩니다.)
 const SAMPLE_RESULT: AnalysisResult = {
   score: 72,
-  interestLevel: "중간 이상",
+  interestLevel: "높음", // ANALYSIS_SCHEMA(claude.ts)의 enum 값만 사용
   summary:
     "※ 데모 화면에서는 미리 준비된 샘플 결과를 보여드려요. 내 대화로 실제 분석을 받으려면 로그인 후 이용해주세요. — 전반적으로 상대방이 대화를 이어가려는 의지가 보여요. 답장 간격이 일정하고 질문을 되돌려주는 패턴이 긍정적이에요.",
   signals: [

@@ -1,123 +1,34 @@
-// ===== [마일스톤2: 검색] — 검색 화면(React 컴포넌트) =====
-// 사용자가 질문을 입력 → fetch로 /api/rag/search 호출 → 결과를 화면에 표시.
-// React 핵심: useState(상태) / onClick·onKeyDown(이벤트) / fetch(서버요청) / {조건 && ...}(조건부 표시)
-"use client"; // 이 파일은 브라우저에서 도는 컴포넌트 (상태·클릭 등 상호작용 담당)
-
-import { useState } from "react";
+// ===== [마일스톤2: 검색] — 검색 페이지(서버 컴포넌트) =====
+// 검색은 로그인한 사용자의 기록만 대상으로 하므로, 화면 진입 단계에서 세션을 확인한다.
+// 비로그인이면 /history 와 동일하게 로그인 안내를 보여주고, 실제 검색 UI는
+// 클라이언트 컴포넌트(SearchClient)로 분리한다.
 import Link from "next/link";
+import { auth } from "@/auth";
+import SearchClient from "./SearchClient";
 
-interface SearchHit {
-  chunkId: string;
-  sessionId: string;
-  sessionTitle: string;
-  text: string;
-  score: number;
-}
+export const dynamic = "force-dynamic";
 
-export default function SearchPage() {
-  const [query, setQuery] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [hits, setHits] = useState<SearchHit[] | null>(null);
+export default async function SearchPage() {
+  const session = await auth();
 
-  async function handleSearch() {
-    setError(null);
-    setHits(null);
-    setLoading(true);
-    try {
-      const res = await fetch("/api/rag/search", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, k: 5 }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? "검색에 실패했어요.");
-        return;
-      }
-      setHits(data.hits as SearchHit[]);
-    } catch {
-      setError("네트워크 오류가 발생했어요.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  return (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h1 className="text-2xl font-extrabold text-slate-800">
+  if (!session?.user) {
+    return (
+      <div className="mx-auto max-w-md space-y-4 py-10 text-center">
+        <h1 className="text-xl font-extrabold text-slate-800">
           히스토리 의미 검색 🔎
         </h1>
-        <p className="mt-2 text-sm text-slate-500">
-          지난 대화들 속에서 의미로 찾아드려요. 예) &quot;서운했던 순간&quot;,
-          &quot;읽씹당한 패턴&quot;
+        <p className="text-sm text-slate-500">
+          로그인하면 내 분석 기록을 의미로 검색할 수 있어요.
         </p>
+        <Link
+          href="/login"
+          className="inline-block rounded-xl bg-brand-500 px-4 py-2.5 font-bold text-white hover:bg-brand-600"
+        >
+          로그인하기
+        </Link>
       </div>
+    );
+  }
 
-      <div className="rounded-2xl border border-rose-100 bg-white p-5 shadow-sm">
-        <div className="flex gap-2">
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && query.trim().length >= 2) handleSearch();
-            }}
-            placeholder="무엇을 찾을까요? (의미로 검색돼요)"
-            className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400"
-          />
-          <button
-            onClick={handleSearch}
-            disabled={loading || query.trim().length < 2}
-            className="shrink-0 rounded-xl bg-brand-500 px-5 font-bold text-white transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {loading ? "…" : "검색"}
-          </button>
-        </div>
-
-        {error && (
-          <p className="mt-3 rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-600">
-            {error}
-          </p>
-        )}
-      </div>
-
-      {hits && (
-        <div className="space-y-3">
-          <h2 className="text-lg font-bold text-slate-800">
-            관련 대화 {hits.length}건
-          </h2>
-          {hits.length === 0 && (
-            <p className="text-sm text-slate-500">
-              검색된 대화가 없어요. 먼저 대화를 분석해 기록을 쌓아주세요.
-            </p>
-          )}
-          {hits.map((hit, i) => (
-            <Link
-              key={hit.chunkId}
-              href={`/history/${hit.sessionId}`}
-              className="block rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition hover:border-brand-200"
-            >
-              <div className="mb-1 flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-400">
-                  #{i + 1} · {hit.sessionTitle}
-                </span>
-                <span className="text-xs font-medium text-brand-500">
-                  유사도 {(hit.score * 100).toFixed(0)}%
-                </span>
-              </div>
-              <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-700">
-                {hit.text.length > 200
-                  ? hit.text.slice(0, 200) + "…"
-                  : hit.text}
-              </p>
-            </Link>
-          ))}
-          <p className="pt-1 text-center text-xs text-slate-400">
-            유사도는 절대값보다 순위로 보세요. (임베딩 의미 검색)
-          </p>
-        </div>
-      )}
-    </div>
-  );
+  return <SearchClient />;
 }

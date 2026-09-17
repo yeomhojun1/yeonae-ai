@@ -12,8 +12,10 @@ const DATED_RE =
 // 날짜 구분선:  --------------- 2024년 1월 1일 월요일 ---------------
 const DATE_DIVIDER_RE = /^-{3,}.*-{3,}$/;
 
-// 내보내기 헤더로 무시할 줄
-const HEADER_RE = /(님과 카카오톡 대화|저장한 날짜|저장한 대화)/;
+// 내보내기 헤더로 무시할 줄. 줄 시작에 앵커를 걸고(본문 중간에 같은 어구가 있어도 안전),
+// 헤더가 실제로 나타나는 파일 맨 앞부분에서만 판정한다.
+const HEADER_RE = /^(?:.{0,40}님과 카카오톡 대화|저장한 날짜|저장한 대화)/;
+const HEADER_SCAN_LINES = 5;
 
 /**
  * 카톡 내보내기 텍스트를 "이름: 메시지" 줄들로 정리.
@@ -24,13 +26,16 @@ export function parseKakaoExport(raw: string): string {
   const out: string[] = [];
   let matched = 0;
 
-  for (const line of lines) {
-    const trimmed = line.trim();
+  for (let i = 0; i < lines.length; i++) {
+    const trimmed = lines[i].trim();
     if (!trimmed) {
       out.push("");
       continue;
     }
-    if (DATE_DIVIDER_RE.test(trimmed) || HEADER_RE.test(trimmed)) {
+    if (
+      DATE_DIVIDER_RE.test(trimmed) ||
+      (i < HEADER_SCAN_LINES && HEADER_RE.test(trimmed))
+    ) {
       continue; // 구분선/헤더 제거
     }
 

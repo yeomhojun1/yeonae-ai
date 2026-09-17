@@ -19,18 +19,18 @@ export default function RootLayout({
       <body>
         <header className="border-b border-rose-100 bg-white/70 backdrop-blur sticky top-0 z-10">
           <div className="mx-auto flex max-w-3xl items-center justify-between gap-2 px-4 py-3">
-            <Link href="/" className="flex shrink-0 items-center gap-1.5 text-lg font-bold">
+            <Link href="/" className="flex shrink-0 items-center gap-1.5 text-base font-bold sm:text-lg">
               <span aria-hidden>💘</span>
               <span className="text-brand-600">연애 분석 AI</span>
             </Link>
-            <nav className="flex items-center gap-3 text-sm text-slate-600 sm:gap-4">
-              <Link href="/" className="hidden hover:text-brand-600 sm:inline">
-                분석하기
+            <nav className="flex items-center gap-2.5 text-sm text-slate-600 sm:gap-4">
+              <Link href="/" className="hover:text-brand-600">
+                분석<span className="hidden sm:inline">하기</span>
               </Link>
               <Link href="/history" className="hover:text-brand-600">
                 기록
               </Link>
-              <Link href="/search" className="hidden hover:text-brand-600 sm:inline">
+              <Link href="/search" className="hover:text-brand-600">
                 검색
               </Link>
               <AuthButtons />

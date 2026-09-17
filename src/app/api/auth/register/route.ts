@@ -42,9 +42,30 @@ export async function POST(req: Request) {
   }
 
   const passwordHash = await bcrypt.hash(password, 10);
-  await prisma.user.create({
-    data: { email, name, passwordHash },
-  });
+  try {
+    await prisma.user.create({
+      data: { email, name, passwordHash },
+    });
+  } catch (e) {
+    // findUnique~create 사이에 같은 이메일로 동시 가입이 들어오면 unique 제약(P2002)에 걸린다.
+    // 이건 서버 오류가 아니라 "이미 가입됨"이므로 위와 같은 409로 응답한다.
+    if (isUniqueViolation(e)) {
+      return NextResponse.json(
+        { error: "이미 가입된 이메일이에요. 로그인해주세요." },
+        { status: 409 }
+      );
+    }
+    throw e;
+  }
 
   return NextResponse.json({ ok: true }, { status: 201 });
+}
+
+/** Prisma unique 제약 위반(P2002) 여부 */
+function isUniqueViolation(e: unknown): boolean {
+  return (
+    typeof e === "object" &&
+    e !== null &&
+    (e as { code?: unknown }).code === "P2002"
+  );
 }

@@ -53,7 +53,7 @@
 | 스타일 | Tailwind CSS |
 | DB | PostgreSQL + **pgvector** (벡터 검색) + Prisma ORM |
 | 인증 | Auth.js (NextAuth v5) · 카카오 OAuth |
-| AI (분석) | Anthropic Claude API (`claude-opus-4-8`, structured outputs) |
+| AI (분석) | Anthropic Claude API (`claude-sonnet-5`, structured outputs) |
 | AI (검색) | `@xenova/transformers` · `multilingual-e5-small` (384차원 임베딩, **로컬 실행**) |
 
 ## 🔬 기술적 하이라이트

@@ -30,11 +30,6 @@ export async function POST() {
       { status: 429 }
     );
   }
-  await prisma.user.update({
-    where: { id: userId },
-    data: { lastReindexAt: new Date() },
-  });
-
   const sessions = await prisma.analysisSession.findMany({
     where: { userId },
     select: { id: true, rawText: true },
@@ -44,6 +39,13 @@ export async function POST() {
   for (const s of sessions) {
     totalChunks += await indexSession(s.id, userId, s.rawText);
   }
+
+  // 쿨다운은 "성공한 재인덱싱" 기준으로만 소모시킨다.
+  // (작업 중 예외가 나면 여기까지 오지 않으므로 사용자가 바로 재시도할 수 있다.)
+  await prisma.user.update({
+    where: { id: userId },
+    data: { lastReindexAt: new Date() },
+  });
 
   return NextResponse.json({
     indexedSessions: sessions.length,
