@@ -1,5 +1,7 @@
 # 연애 대화 분석 AI
 
+> 🔗 **Live Demo**: https://yeonae-ai.vercel.app
+
 카카오톡·DM 대화를 붙여 넣으면 상대의 호감도, 좋은 신호와 위험 신호, 보낼 만한 답장, 다음에 할 행동을 정리해 주는 웹 서비스입니다.
 
 **[바로 써 보기 (데모, 로그인 필요 없음)](https://yeomhojun1.github.io/yeonae-ai/)**
