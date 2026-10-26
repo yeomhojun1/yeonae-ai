@@ -1,10 +1,29 @@
 # 💘 연애 대화 분석 AI (yeonae-ai)
 
-카톡·DM 대화, 소개팅·썸 상황을 붙여넣으면 AI가 **호감도, 답장 추천, 위험 신호, 다음 행동**을 분석해주는 웹 앱입니다.
+카톡·DM 대화를 붙여 넣으면 상대의 호감도, 답장 추천, 위험 신호, 다음 행동을 정리해 주는 웹 앱입니다.
+
+**누구에게 도움이 되나요?** 썸이나 소개팅 상대와의 대화를 두고 "이 사람 나한테 관심 있나?", "뭐라고 답하지?"를 혼자 고민하는 사람에게, 대화를 한 번 더 객관적으로 읽어 볼 수 있는 참고 자료를 줍니다.
+
+### ▶ [바로 써 보기 (데모)](https://yeomhojun1.github.io/yeonae-ai/)
+
+설치·로그인 없이 브라우저에서 바로 열립니다. 데모는 실제 AI·서버 없이 동작하며, 지어낸 샘플 대화 4개와 미리 준비한 결과를 보여 줍니다. (직접 붙여 넣은 대화는 데모에서 분석되지 않습니다.)
+
+**할 수 있는 것**
+- 대화를 넣으면 상대의 관심도를 0~100점으로 보여 줍니다.
+- 좋은 신호와 위험 신호(답장이 느려짐, 약속을 미룸 등)를 나눠서 짚어 줍니다.
+- 바로 보낼 수 있는 답장 3가지를 말투별로 추천합니다.
+- 지금 무엇을 하면 좋을지 다음 행동을 제안합니다.
+- 지난 대화 기록을 "서운했던 순간"처럼 뜻으로 검색합니다.
+
+**만든 과정** — AI 코딩 에이전트와 함께 만들고, 기능 테스트로 찾은 문제 10건 중 9건을 고친 뒤 자동 테스트 17개를 추가했습니다([fix-report.md](fix-report.md)). 검색 품질은 정답 목록(골든셋 12문항)으로 측정했고, 키워드+의미 검색을 섞는 방식이 F1 0.25 → 0.30으로 나아지는 것을 확인했습니다. 다만 이 방식은 아직 실서비스 검색에는 적용하지 않았습니다([feature-test-report.md](feature-test-report.md)).
 
 > AI 분석은 참고용입니다. 최종 판단은 본인의 몫이에요.
 
-**[소스 코드](https://github.com/yeomhojun1/yeonae-ai)** · **[▶ 라이브 데모](https://your-demo-url.vercel.app)** <!-- 🔧 배포 주소로 교체 -->
+---
+
+## 개발자용 안내
+
+**[소스 코드](https://github.com/yeomhojun1/yeonae-ai)** · **[▶ 라이브 데모 (GitHub Pages, 정적 데모 모드)](https://yeomhojun1.github.io/yeonae-ai/)**
 
 ![Next.js](https://img.shields.io/badge/Next.js-15-black)
 ![React](https://img.shields.io/badge/React-19-61DAFB)
@@ -195,6 +214,20 @@ npx tsx scripts/eval-hybrid.ts    # 임베딩 vs 하이브리드 비교
    ```
 
 > 빌드 커맨드는 `package.json`의 `build`(= `prisma generate && next build`)를 그대로 사용합니다. 별도 설정 불필요.
+
+## 🧪 정적 데모 (GitHub Pages)
+
+`NEXT_PUBLIC_DEMO=true`로 빌드하면 서버·DB·AI 없이 브라우저 안에서만 동작하는 정적 데모가 `out/`에 만들어집니다.
+
+- `next.config.mjs`가 데모 빌드에서만 `output: "export"`, `basePath: "/yeonae-ai"`, `pageExtensions: ["demo.tsx", "demo.ts"]`를 켭니다. 그래서 `src/app` 아래 `*.demo.tsx`만 라우트가 되고, API 라우트와 로그인 의존 페이지는 데모 빌드에서 빠집니다. 평소 빌드에서는 `*.demo.tsx`가 라우트로 인식되지 않습니다.
+- 샘플 대화·분석 결과: `src/lib/demo/samples.ts` (지어낸 대화, 분석 결과는 스키마에 맞춰 사람이 작성한 예시)
+- 검색 결과: `src/lib/demo/search-results.json` — `npx tsx scripts/build-demo-search.ts`로 로컬 임베딩 모델을 돌려 미리 계산 (샘플이 짧아 조각 크기만 120자로 줄임)
+- 배포: `.github/workflows/pages.yml` (main 푸시 시 데모 빌드 → Pages 배포)
+
+```bash
+# 로컬에서 데모 빌드 (bash)
+NEXT_PUBLIC_DEMO=true npx next build   # 결과: out/
+```
 
 ## 💰 수익 모델 (예정)
 

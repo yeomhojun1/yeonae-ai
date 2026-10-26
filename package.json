@@ -8,7 +8,7 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "node --import tsx --test tests/chunk.test.ts tests/kakao.test.ts tests/embeddings.test.ts tests/demo-analyze.test.ts",
+    "test": "node --import tsx --test tests/chunk.test.ts tests/kakao.test.ts tests/embeddings.test.ts tests/demo-analyze.test.ts tests/demo-mode.test.ts",
     "postinstall": "prisma generate",
     "db:push": "prisma db push",
     "db:studio": "prisma studio"

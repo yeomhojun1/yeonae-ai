@@ -14,21 +14,40 @@ interface SearchHit {
   score: number;
 }
 
-export default function SearchClient() {
+/** 정적 데모 빌드용: 서버 API 대신 브라우저 안에서 결과를 돌려준다. */
+export type LocalSearch = (
+  query: string
+) => { ok: true; data: SearchHit[] } | { ok: false; error: string };
+
+export default function SearchClient({
+  localSearch,
+  suggestions,
+}: {
+  localSearch?: LocalSearch;
+  suggestions?: string[];
+} = {}) {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hits, setHits] = useState<SearchHit[] | null>(null);
 
-  async function handleSearch() {
+  async function handleSearch(q: string = query) {
     setError(null);
     setHits(null);
     setLoading(true);
+    if (localSearch) {
+      await new Promise((r) => setTimeout(r, 300));
+      const out = localSearch(q);
+      if (out.ok) setHits(out.data);
+      else setError(out.error);
+      setLoading(false);
+      return;
+    }
     try {
       const res = await fetch("/api/rag/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, k: 5 }),
+        body: JSON.stringify({ query: q, k: 5 }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -67,13 +86,32 @@ export default function SearchClient() {
             className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400"
           />
           <button
-            onClick={handleSearch}
+            onClick={() => handleSearch()}
             disabled={loading || query.trim().length < 2}
             className="shrink-0 rounded-xl bg-brand-500 px-5 font-bold text-white transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading ? "…" : "검색"}
           </button>
         </div>
+
+        {suggestions && suggestions.length > 0 && (
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <span className="text-xs text-slate-400">예시 검색어</span>
+            {suggestions.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => {
+                  setQuery(s);
+                  handleSearch(s);
+                }}
+                className="rounded-lg border border-rose-200 bg-white px-2.5 py-1 text-xs text-slate-700 transition hover:border-brand-400 hover:text-brand-600"
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        )}
 
         {error && (
           <p className="mt-3 rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-600">

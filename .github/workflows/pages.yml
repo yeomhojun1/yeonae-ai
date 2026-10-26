@@ -1,0 +1,48 @@
+# GitHub Pages 정적 데모 배포.
+# NEXT_PUBLIC_DEMO=true 로 빌드하면 서버·DB·AI 없이 브라우저 안에서만 동작하는 데모(out/)가 만들어진다.
+# 저장소 Settings → Pages → Source 를 "GitHub Actions" 로 설정해야 배포된다.
+name: Deploy demo to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Build static demo
+        run: npx next build
+        env:
+          NEXT_PUBLIC_DEMO: "true"
+          NEXT_TELEMETRY_DISABLED: "1"
+      - run: touch out/.nojekyll
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

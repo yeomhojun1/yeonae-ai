@@ -4,14 +4,30 @@ import { useRef, useState } from "react";
 import Link from "next/link";
 import AnalysisView from "@/components/AnalysisView";
 import { parseKakaoExport } from "@/lib/kakao";
-import type { StoredSession } from "@/lib/types";
+import type { AnalyzeRequest, StoredSession } from "@/lib/types";
+
+/** 정적 데모 빌드용: 서버 API 대신 브라우저 안에서 결과를 만든다. */
+export type LocalAnalyze = (
+  req: AnalyzeRequest
+) => { ok: true; data: StoredSession } | { ok: false; error: string };
+
+export interface AnalyzerSample {
+  id: string;
+  label: string;
+  relationship: string;
+  rawText: string;
+}
 
 export default function Analyzer({
   endpoint = "/api/analyze",
   demo = false,
+  localAnalyze,
+  samples,
 }: {
   endpoint?: string;
   demo?: boolean;
+  localAnalyze?: LocalAnalyze;
+  samples?: AnalyzerSample[];
 }) {
   const [rawText, setRawText] = useState("");
   const [relationship, setRelationship] = useState("");
@@ -46,6 +62,14 @@ export default function Analyzer({
     setError(null);
     setResult(null);
     setLoading(true);
+    if (localAnalyze) {
+      await new Promise((r) => setTimeout(r, 400));
+      const out = localAnalyze({ rawText, relationship });
+      if (out.ok) setResult(out.data);
+      else setError(out.error);
+      setLoading(false);
+      return;
+    }
     try {
       const res = await fetch(endpoint, {
         method: "POST",
@@ -79,6 +103,34 @@ export default function Analyzer({
       )}
 
       <div className="rounded-2xl border border-rose-100 bg-white p-5 shadow-sm">
+        {samples && samples.length > 0 && (
+          <div className="mb-4 rounded-xl bg-rose-50/70 p-3">
+            <p className="mb-2 text-sm font-semibold text-slate-700">
+              샘플 대화 넣기{" "}
+              <span className="font-normal text-slate-400">
+                (지어낸 가상 대화예요)
+              </span>
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {samples.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => {
+                    setRawText(s.rawText);
+                    setRelationship(s.relationship);
+                    setFileName(null);
+                    setError(null);
+                    setResult(null);
+                  }}
+                  className="rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-sm text-slate-700 transition hover:border-brand-400 hover:text-brand-600"
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         <label className="mb-1 block text-sm font-semibold text-slate-700">
           관계 상태 <span className="font-normal text-slate-400">(선택)</span>
         </label>
@@ -137,7 +189,9 @@ export default function Analyzer({
           {loading ? "분석 중… 🔍" : "AI로 분석하기"}
         </button>
         <p className="mt-2 text-center text-xs text-slate-400">
-          무료 분석은 하루 3회예요.
+          {localAnalyze
+            ? "데모 모드: 샘플 대화를 넣으면 미리 준비한 결과를 보여 드려요."
+            : "무료 분석은 하루 3회예요."}
         </p>
       </div>
 
@@ -157,13 +211,15 @@ export default function Analyzer({
             </button>
           </div>
           <AnalysisView result={result.result} />
-          {!demo && (
+          {(!demo || localAnalyze) && (
             <div className="text-center">
               <Link
                 href={`/history/${result.id}`}
                 className="text-sm text-brand-600 hover:underline"
               >
-                이 분석은 기록에 저장됐어요 →
+                {localAnalyze
+                  ? "기록 화면에서 이 샘플 다시 보기 →"
+                  : "이 분석은 기록에 저장됐어요 →"}
               </Link>
             </div>
           )}
