@@ -1,9 +1,9 @@
-import Anthropic from "@anthropic-ai/sdk";
+// AI 제공자: Google Gemini (REST). 외부 SDK 불필요.
 import type { AnalysisResult } from "./types";
 
 // 운영비 절감을 위해 Sonnet 5 사용(Opus 대비 입력·출력 단가 약 40%↓, 8/31까지 인트로가 더 저렴).
 // adaptive thinking·structured output 모두 지원해 아래 호출부는 그대로 호환된다.
-const MODEL = "claude-sonnet-5";
+const MODEL = "gemini-3.5-flash";
 
 // 분석 결과를 강제할 JSON 스키마 (Structured Outputs)
 const ANALYSIS_SCHEMA = {
@@ -89,23 +89,18 @@ export async function analyzeConversation(
   rawText: string,
   relationship?: string
 ): Promise<AnalysisResult> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
 
   if (!apiKey) {
     // 프로덕션에서 키가 없으면 목업(가짜) 결과를 조용히 내보내지 않는다.
-    // 사용자가 예시 결과를 진짜 분석으로 오인하는 걸 막기 위함.
     if (process.env.NODE_ENV === "production") {
-      throw new Error("ANTHROPIC_API_KEY가 설정되지 않았습니다.");
+      throw new Error("GEMINI_API_KEY가 설정되지 않았습니다.");
     }
     return mockAnalysis(rawText);
   }
 
-  const client = new Anthropic({ apiKey });
-
   const userContent = [
-    relationship?.trim()
-      ? `관계 상태 메모: ${relationship.trim()}`
-      : null,
+    relationship?.trim() ? `관계 상태 메모: ${relationship.trim()}` : null,
     "아래는 나와 상대방의 대화야. 분석해줘.",
     "----- 대화 시작 -----",
     rawText.trim(),
@@ -114,27 +109,34 @@ export async function analyzeConversation(
     .filter(Boolean)
     .join("\n\n");
 
-  const response = await client.messages.create({
-    model: MODEL,
-    max_tokens: 4096,
-    thinking: { type: "adaptive" },
-    system: SYSTEM_PROMPT,
-    output_config: {
-      format: {
-        type: "json_schema",
-        schema: ANALYSIS_SCHEMA,
-      },
-    },
-    messages: [{ role: "user", content: userContent }],
-  });
+  const jsonShape = `반드시 아래 JSON 형식으로만 응답해(설명 문장·코드펜스 금지):
+{"score": <0~100 정수>, "interestLevel": "매우 높음"|"높음"|"보통"|"낮음"|"매우 낮음", "summary": "<2~4문장>", "signals": [{"type":"positive"|"negative"|"neutral","text":"<내용>"}], "replySuggestions": [{"tone":"<톤>","content":"<답장>"}], "nextActions": ["<행동>"]}`;
 
-  // structured output이 보장되어 첫 text 블록이 유효한 JSON
-  const textBlock = response.content.find((b) => b.type === "text");
-  if (!textBlock || textBlock.type !== "text") {
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: `${SYSTEM_PROMPT}\n\n${jsonShape}` }] },
+        contents: [{ role: "user", parts: [{ text: userContent }] }],
+        generationConfig: { maxOutputTokens: 4096, responseMimeType: "application/json" },
+      }),
+    }
+  );
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data?.error?.message || `Gemini HTTP ${res.status}`);
+  }
+  const text: string = (data?.candidates?.[0]?.content?.parts || [])
+    .map((p: { text?: string }) => p.text || "")
+    .join("")
+    .trim();
+  if (!text) {
     throw new Error("분석 결과를 받지 못했습니다.");
   }
 
-  const parsed = JSON.parse(textBlock.text) as AnalysisResult;
+  const parsed = JSON.parse(text) as AnalysisResult;
   return normalize(parsed);
 }
 
