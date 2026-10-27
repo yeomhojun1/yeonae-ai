@@ -48,7 +48,7 @@ export default async function HomePage() {
         </p>
         <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link
-            href="/signup"
+            href="/demo"
             className="w-full rounded-xl bg-brand-500 px-6 py-3 text-center font-bold text-white transition hover:bg-brand-600 sm:w-auto"
           >
             무료로 시작하기
@@ -115,7 +115,7 @@ export default async function HomePage() {
       {/* Final CTA */}
       <section className="text-center">
         <Link
-          href="/signup"
+          href="/demo"
           className="inline-block rounded-xl bg-brand-500 px-8 py-3 font-bold text-white transition hover:bg-brand-600"
         >
           지금 무료로 시작하기 →
