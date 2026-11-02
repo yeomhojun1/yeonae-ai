@@ -5,6 +5,11 @@ import { maskPII } from "./pii";
 // 운영비 절감을 위해 Sonnet 5 사용(Opus 대비 입력·출력 단가 약 40%↓, 8/31까지 인트로가 더 저렴).
 // adaptive thinking·structured output 모두 지원해 아래 호출부는 그대로 호환된다.
 const MODEL = "gemini-3.5-flash";
+// 기본 모델이 과부하(503)·한도(429)일 때 넘어갈 모델. 세대가 달라 같이 막힐 가능성이 낮다.
+const FALLBACK_MODEL = "gemini-2.5-flash";
+// 일시적 오류로 보고 재시도할 HTTP 상태
+const RETRYABLE_STATUS = new Set([429, 500, 503]);
+const RETRY_DELAY_MS = 800;
 
 // 분석 결과를 강제할 JSON 스키마 (Structured Outputs)
 const ANALYSIS_SCHEMA = {
@@ -116,22 +121,14 @@ export async function analyzeConversation(
   const jsonShape = `반드시 아래 JSON 형식으로만 응답해(설명 문장·코드펜스 금지):
 {"score": <0~100 정수>, "interestLevel": "매우 높음"|"높음"|"보통"|"낮음"|"매우 낮음", "summary": "<2~4문장>", "signals": [{"type":"positive"|"negative"|"neutral","text":"<내용>"}], "replySuggestions": [{"tone":"<톤>","content":"<답장>"}], "nextActions": ["<행동>"]}`;
 
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: `${SYSTEM_PROMPT}\n\n${jsonShape}` }] },
-        contents: [{ role: "user", parts: [{ text: userContent }] }],
-        generationConfig: { maxOutputTokens: 4096, responseMimeType: "application/json" },
-      }),
-    }
+  const data = await callGemini(
+    apiKey,
+    JSON.stringify({
+      systemInstruction: { parts: [{ text: `${SYSTEM_PROMPT}\n\n${jsonShape}` }] },
+      contents: [{ role: "user", parts: [{ text: userContent }] }],
+      generationConfig: { maxOutputTokens: 4096, responseMimeType: "application/json" },
+    })
   );
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data?.error?.message || `Gemini HTTP ${res.status}`);
-  }
   const text: string = (data?.candidates?.[0]?.content?.parts || [])
     .map((p: { text?: string }) => p.text || "")
     .join("")
@@ -142,6 +139,28 @@ export async function analyzeConversation(
 
   const parsed = JSON.parse(text) as AnalysisResult;
   return normalize(parsed);
+}
+
+/**
+ * Gemini 호출. 일시적 오류(429·500·503)면 같은 모델로 한 번 더 시도하고,
+ * 그래도 실패하면 대체 모델로 넘어간다. 그 밖의 오류(키 오류 등)는 바로 던진다.
+ */
+async function callGemini(apiKey: string, body: string) {
+  let lastError = "";
+  for (const model of [MODEL, FALLBACK_MODEL]) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      if (attempt > 0) await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        { method: "POST", headers: { "Content-Type": "application/json" }, body }
+      );
+      const data = await res.json();
+      if (res.ok) return data;
+      lastError = data?.error?.message || `Gemini HTTP ${res.status}`;
+      if (!RETRYABLE_STATUS.has(res.status)) throw new Error(lastError);
+    }
+  }
+  throw new Error(lastError);
 }
 
 function normalize(r: AnalysisResult): AnalysisResult {
