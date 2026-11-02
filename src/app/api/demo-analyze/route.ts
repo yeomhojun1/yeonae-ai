@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { AnalyzeRequest, StoredSession } from "@/lib/types";
 import { analyzeConversation } from "@/lib/claude";
 import { clientIp, refundDemoSlot, takeDemoSlot } from "@/lib/demo-limit";
-import { FREE_DAILY_LIMIT } from "@/lib/usage";
+import { DEMO_MAX_CHARS, FREE_DAILY_LIMIT } from "@/lib/usage";
 
 // 비로그인 데모 분석: 실제 AI(Gemini)로 분석한다. DB 저장은 하지 않는다(세션 미보관).
 export async function POST(req: Request) {
@@ -20,9 +20,9 @@ export async function POST(req: Request) {
       { status: 400 }
     );
   }
-  if (rawText.length > 8000) {
+  if (rawText.length > DEMO_MAX_CHARS) {
     return NextResponse.json(
-      { error: "대화가 너무 길어요. 8000자 이내로 줄여주세요." },
+      { error: `대화가 너무 길어요. ${DEMO_MAX_CHARS}자 이내로 줄여주세요.` },
       { status: 400 }
     );
   }

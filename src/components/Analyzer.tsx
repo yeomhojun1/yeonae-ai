@@ -24,11 +24,14 @@ export default function Analyzer({
   demo = false,
   localAnalyze,
   samples,
+  maxChars = 12000,
 }: {
   endpoint?: string;
   demo?: boolean;
   localAnalyze?: LocalAnalyze;
   samples?: AnalyzerSample[];
+  /** 서버가 받는 대화 최대 길이. 올린 파일은 이 길이에 맞춰 최근 대화만 남긴다 */
+  maxChars?: number;
 }) {
   const [rawText, setRawText] = useState("");
   const [relationship, setRelationship] = useState("");
@@ -49,8 +52,8 @@ export default function Analyzer({
     try {
       const text = await file.text();
       const cleaned = parseKakaoExport(text);
-      // 프롬프트/토큰 보호를 위해 12,000자까지만 (뒤쪽 최근 대화 우선)
-      setRawText(cleaned.length > 12000 ? cleaned.slice(-12000) : cleaned);
+      // 서버 한도까지만 (뒤쪽 최근 대화 우선). 한도를 넘기면 서버가 400으로 거절한다.
+      setRawText(cleaned.length > maxChars ? cleaned.slice(-maxChars) : cleaned);
       setFileName(file.name);
     } catch {
       setError("파일을 읽지 못했어요.");
