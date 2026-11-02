@@ -1,5 +1,6 @@
 // AI 제공자: Google Gemini (REST). 외부 SDK 불필요.
 import type { AnalysisResult } from "./types";
+import { maskPII } from "./pii";
 
 // 운영비 절감을 위해 Sonnet 5 사용(Opus 대비 입력·출력 단가 약 40%↓, 8/31까지 인트로가 더 저렴).
 // adaptive thinking·structured output 모두 지원해 아래 호출부는 그대로 호환된다.
@@ -79,6 +80,7 @@ const SYSTEM_PROMPT = `너는 한국의 연애 대화 분석 코치야. 사용�
 - 답장 추천은 자연스럽고 사람 냄새 나게 써. AI가 쓴 티가 나거나 오글거리는 문장은 금지.
 - 위험 신호(관심 식음, 회피, 읽씹 패턴 등)가 보이면 signals에 negative 타입으로 솔직하게 알려줘.
 - 과장하거나 헛된 희망을 주지 말고, 근거를 대화에서 찾아 현실적으로 조언해.
+- [전화번호]·[주소] 같은 대괄호 표시는 개인정보를 가린 자리야. 원래 내용을 추측하거나 언급하지 마.
 - 모든 답변은 한국어로.`;
 
 /**
@@ -99,11 +101,13 @@ export async function analyzeConversation(
     return mockAnalysis(rawText);
   }
 
+  // 외부 LLM으로 나가기 전에 개인정보를 가린다(무료 등급은 입력을 학습에 쓸 수 있음).
+  const memo = relationship?.trim() ? maskPII(relationship.trim()).text : "";
   const userContent = [
-    relationship?.trim() ? `관계 상태 메모: ${relationship.trim()}` : null,
+    memo ? `관계 상태 메모: ${memo}` : null,
     "아래는 나와 상대방의 대화야. 분석해줘.",
     "----- 대화 시작 -----",
-    rawText.trim(),
+    maskPII(rawText.trim()).text,
     "----- 대화 끝 -----",
   ]
     .filter(Boolean)
