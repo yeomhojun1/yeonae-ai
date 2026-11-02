@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
+import { LogoMark } from "@/components/SiteChrome";
 
 export default function AuthForm({
   mode,
@@ -64,49 +65,55 @@ export default function AuthForm({
   }
 
   return (
-    <div className="mx-auto w-full max-w-sm space-y-6 py-8">
+    <div className="card mx-auto mt-8 w-full max-w-sm space-y-6 p-8">
       <div className="text-center">
-        <div className="text-5xl">💘</div>
-        <h1 className="mt-3 text-2xl font-extrabold text-slate-800">
+        <LogoMark className="mx-auto h-10 w-10" />
+        <h1 className="mt-4 text-[24px] font-medium text-ink-900">
           {isSignup ? "회원가입" : "로그인"}
         </h1>
-        <p className="mt-2 text-sm text-slate-500">
+        <p className="mt-2 text-sm text-ink-600">
           {isSignup
-            ? "이메일로 가입하고 내 분석 기록을 저장하세요."
-            : "로그인하면 내 분석 기록을 다시 볼 수 있어요."}
+            ? "이메일로 가입하고 내 분석 기록을 저장하세요"
+            : "로그인하면 내 분석 기록을 다시 볼 수 있어요"}
         </p>
       </div>
 
-      {/* 카카오 로그인 */}
+      {/* 카카오 로그인 (카카오 디자인 가이드의 노란 바탕 + 검은 말풍선) */}
       <button
         onClick={() => signIn("kakao", { callbackUrl })}
-        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#FEE500] py-3 font-bold text-[#3C1E1E] transition hover:brightness-95"
+        className="flex h-12 w-full items-center justify-center gap-2 rounded-[10px] bg-[#FEE500] text-[15px] font-medium text-black/85 transition-[filter] duration-150 ease-out hover:brightness-95"
       >
-        <span aria-hidden>💬</span> 카카오로 계속하기
+        <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" aria-hidden>
+          <path
+            fill="#000"
+            d="M12 3C6.5 3 2 6.6 2 11c0 2.9 1.9 5.4 4.8 6.8l-1 3.6c-.1.3.3.6.6.4l4.2-2.8c.5.1 1 .1 1.4.1 5.5 0 10-3.6 10-8S17.5 3 12 3Z"
+          />
+        </svg>
+        카카오로 계속하기
       </button>
 
-      <div className="flex items-center gap-3 text-xs text-slate-400">
-        <span className="h-px flex-1 bg-slate-200" />
+      <div className="flex items-center gap-3 text-xs text-ink-500">
+        <span className="h-px flex-1 bg-ink-900/[0.08]" />
         또는 이메일로
-        <span className="h-px flex-1 bg-slate-200" />
+        <span className="h-px flex-1 bg-ink-900/[0.08]" />
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-3">
+      <form onSubmit={handleSubmit} className="space-y-4">
         {isSignup && (
           <div>
-            <label className="mb-1 block text-sm font-semibold text-slate-700">
-              닉네임 <span className="font-normal text-slate-400">(선택)</span>
+            <label className="mb-2 block text-sm font-medium text-ink-900">
+              닉네임 <span className="font-normal text-ink-500">(선택)</span>
             </label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="분석 결과에 표시될 이름"
-              className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-brand-400"
+              className="field"
             />
           </div>
         )}
         <div>
-          <label className="mb-1 block text-sm font-semibold text-slate-700">
+          <label className="mb-2 block text-sm font-medium text-ink-900">
             이메일
           </label>
           <input
@@ -116,11 +123,11 @@ export default function AuthForm({
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
             autoComplete="email"
-            className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-brand-400"
+            className="field"
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-semibold text-slate-700">
+          <label className="mb-2 block text-sm font-medium text-ink-900">
             비밀번호
           </label>
           <input
@@ -131,50 +138,40 @@ export default function AuthForm({
             onChange={(e) => setPassword(e.target.value)}
             placeholder="8자 이상"
             autoComplete={isSignup ? "new-password" : "current-password"}
-            className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-brand-400"
+            className="field"
           />
         </div>
 
         {error && (
-          <p className="rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-600">
-            {error}
-          </p>
+          <p className="rounded-[10px] bg-brand-50 px-4 py-3 text-sm text-brand-700">{error}</p>
         )}
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full rounded-xl bg-brand-500 py-3 font-bold text-white transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {loading
-            ? "처리 중…"
-            : isSignup
-            ? "가입하고 시작하기"
-            : "로그인"}
+        <button type="submit" disabled={loading} className="btn-primary w-full">
+          {loading ? "처리 중" : isSignup ? "가입하고 시작하기" : "로그인"}
         </button>
       </form>
 
-      <p className="text-center text-sm text-slate-500">
+      <p className="text-center text-sm text-ink-600">
         {isSignup ? (
           <>
             이미 계정이 있나요?{" "}
-            <Link href="/login" className="font-semibold text-brand-600 hover:underline">
+            <Link href="/login" className="font-medium text-brand-600 underline-offset-4 hover:underline">
               로그인
             </Link>
           </>
         ) : (
           <>
             아직 계정이 없나요?{" "}
-            <Link href="/signup" className="font-semibold text-brand-600 hover:underline">
+            <Link href="/signup" className="font-medium text-brand-600 underline-offset-4 hover:underline">
               회원가입
             </Link>
           </>
         )}
       </p>
 
-      <p className="text-center text-xs text-slate-400">
-        계속하면 <Link href="/terms" className="underline">이용약관</Link> 및{" "}
-        <Link href="/privacy" className="underline">개인정보 처리방침</Link>에 동의하게 됩니다.
+      <p className="text-center text-xs leading-5 text-ink-500">
+        계속하면 <Link href="/terms" className="underline underline-offset-2">이용약관</Link> 및{" "}
+        <Link href="/privacy" className="underline underline-offset-2">개인정보 처리방침</Link>에 동의하게 됩니다
       </p>
     </div>
   );

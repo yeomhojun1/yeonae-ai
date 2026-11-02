@@ -11,6 +11,9 @@ const PATHS = {
   compass: ["M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z", "m16.24 7.76-2.12 6.36-6.36 2.12 2.12-6.36 6.36-2.12z"],
   activity: ["M22 12h-4l-3 9L9 3l-3 9H2"],
   loader: ["M21 12a9 9 0 1 1-6.219-8.56"],
+  back: ["m15 18-6-6 6-6"],
+  search: ["m21 21-4.34-4.34", "M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"],
+  trash: ["M3 6h18", "M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6", "M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"],
 } as const;
 
 export type IconName = keyof typeof PATHS;
