@@ -9,7 +9,7 @@ export default async function AuthButtons() {
       <div className="flex items-center gap-2 text-sm">
         <Link
           href="/account"
-          className="hidden text-slate-600 hover:text-brand-600 sm:inline"
+          className="hidden text-ink-600 transition-colors duration-150 ease-out hover:text-ink-900 sm:inline"
         >
           {session.user.name ?? "회원"}님
         </Link>
@@ -19,7 +19,7 @@ export default async function AuthButtons() {
             await signOut({ redirectTo: "/" });
           }}
         >
-          <button className="rounded-lg border border-slate-200 px-3 py-1.5 text-slate-600 hover:bg-slate-50">
+          <button className="inline-flex h-8 items-center rounded-lg border border-ink-900/10 bg-white px-3 text-ink-700 transition-colors duration-150 ease-out hover:text-ink-900">
             로그아웃
           </button>
         </form>
@@ -30,7 +30,7 @@ export default async function AuthButtons() {
   return (
     <Link
       href="/login"
-      className="rounded-lg bg-brand-500 px-3 py-1.5 text-sm font-semibold text-white hover:bg-brand-600"
+      className="inline-flex h-8 items-center rounded-lg bg-ink-900 px-3 text-sm font-medium text-white transition-colors duration-150 ease-out hover:bg-ink-800"
     >
       로그인
     </Link>

@@ -1,15 +1,15 @@
 import Analyzer from "@/components/Analyzer";
+import { DEMO_MAX_CHARS } from "@/lib/usage";
 
 // ⚠️ 로컬 데모 전용 페이지: 로그인/DB 없이 분석 화면을 체험합니다.
 export default function DemoPage() {
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-        🧪 <b>데모 모드</b> — 로그인·가입 없이 <b>대화 입력 → 실제 AI 분석</b>을
-        바로 체험합니다. 결과는 저장되지 않아요(기록을 남기려면 로그인 후
-        이용하세요).
-      </div>
-      <Analyzer endpoint="/api/demo-analyze" demo />
+      <p className="rounded-xl bg-ink-100 px-4 py-3 text-sm leading-[22px] text-ink-700">
+        <span className="font-medium text-ink-900">체험 모드</span> · 로그인 없이 실제 AI 분석을
+        써 볼 수 있어요. 결과는 저장되지 않아요.
+      </p>
+      <Analyzer endpoint="/api/demo-analyze" demo maxChars={DEMO_MAX_CHARS} />
     </div>
   );
 }
