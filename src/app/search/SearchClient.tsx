@@ -5,6 +5,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Icon from "@/components/Icon";
+import { PageTitle } from "@/components/HistoryParts";
 
 interface SearchHit {
   chunkId: string;
@@ -64,39 +66,39 @@ export default function SearchClient({
 
   return (
     <div className="space-y-6">
-      <div className="text-center">
-        <h1 className="text-2xl font-extrabold text-slate-800">
-          히스토리 의미 검색 🔎
-        </h1>
-        <p className="mt-2 text-sm text-slate-500">
-          지난 대화들 속에서 의미로 찾아드려요. 예) &quot;서운했던 순간&quot;,
-          &quot;읽씹당한 패턴&quot;
-        </p>
-      </div>
+      <PageTitle sub="지난 대화 속에서 의미로 찾아드려요. 예) “서운했던 순간”, “읽씹당한 패턴”">
+        기록 검색
+      </PageTitle>
 
-      <div className="rounded-2xl border border-rose-100 bg-white p-5 shadow-sm">
+      <div className="card p-6">
         <div className="flex gap-2">
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && query.trim().length >= 2) handleSearch();
-            }}
-            placeholder="무엇을 찾을까요? (의미로 검색돼요)"
-            className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400"
-          />
+          <div className="relative w-full">
+            <Icon
+              name="search"
+              className="pointer-events-none absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-ink-400"
+            />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && query.trim().length >= 2) handleSearch();
+              }}
+              placeholder="찾고 싶은 순간"
+              className="field pl-11"
+            />
+          </div>
           <button
             onClick={() => handleSearch()}
             disabled={loading || query.trim().length < 2}
-            className="shrink-0 rounded-xl bg-brand-500 px-5 font-bold text-white transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50"
+            className="btn-primary shrink-0"
           >
-            {loading ? "…" : "검색"}
+            {loading ? <Icon name="loader" className="h-[18px] w-[18px] animate-spin" /> : "검색"}
           </button>
         </div>
 
         {suggestions && suggestions.length > 0 && (
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <span className="text-xs text-slate-400">예시 검색어</span>
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <span className="text-xs text-ink-500">예시 검색어</span>
             {suggestions.map((s) => (
               <button
                 key={s}
@@ -105,7 +107,7 @@ export default function SearchClient({
                   setQuery(s);
                   handleSearch(s);
                 }}
-                className="rounded-lg border border-rose-200 bg-white px-2.5 py-1 text-xs text-slate-700 transition hover:border-brand-400 hover:text-brand-600"
+                className="inline-flex h-8 items-center rounded-lg border border-ink-900/10 bg-white px-3 text-sm text-ink-700 transition-colors duration-150 ease-out hover:border-brand-300 hover:text-brand-600"
               >
                 {s}
               </button>
@@ -114,19 +116,17 @@ export default function SearchClient({
         )}
 
         {error && (
-          <p className="mt-3 rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-600">
-            {error}
-          </p>
+          <p className="mt-4 rounded-[10px] bg-brand-50 px-4 py-3 text-sm text-brand-700">{error}</p>
         )}
       </div>
 
       {hits && (
-        <div className="space-y-3">
-          <h2 className="text-lg font-bold text-slate-800">
-            관련 대화 {hits.length}건
+        <div className="space-y-4">
+          <h2 className="text-[20px] font-medium text-ink-900">
+            관련 대화 <span className="tabular-nums text-ink-500">{hits.length}건</span>
           </h2>
           {hits.length === 0 && (
-            <p className="text-sm text-slate-500">
+            <p className="text-[15px] text-ink-600">
               검색된 대화가 없어요. 먼저 대화를 분석해 기록을 쌓아주세요.
             </p>
           )}
@@ -134,25 +134,23 @@ export default function SearchClient({
             <Link
               key={hit.chunkId}
               href={`/history/${hit.sessionId}`}
-              className="block rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition hover:border-brand-200"
+              className="card block p-5 transition-colors duration-150 ease-out hover:border-ink-900/20"
             >
-              <div className="mb-1 flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-400">
-                  #{i + 1} · {hit.sessionTitle}
+              <div className="mb-2 flex items-center justify-between gap-4 text-xs">
+                <span className="truncate text-ink-500">
+                  <span className="tabular-nums">{i + 1}</span> · {hit.sessionTitle}
                 </span>
-                <span className="text-xs font-medium text-brand-500">
-                  유사도 {(hit.score * 100).toFixed(0)}%
+                <span className="shrink-0 tabular-nums text-ink-500">
+                  유사도 <span className="font-medium text-brand-600">{(hit.score * 100).toFixed(0)}%</span>
                 </span>
               </div>
-              <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-700">
-                {hit.text.length > 200
-                  ? hit.text.slice(0, 200) + "…"
-                  : hit.text}
+              <p className="whitespace-pre-wrap text-sm leading-6 text-ink-700">
+                {hit.text.length > 200 ? hit.text.slice(0, 200) + "…" : hit.text}
               </p>
             </Link>
           ))}
-          <p className="pt-1 text-center text-xs text-slate-400">
-            유사도는 절대값보다 순위로 보세요. (임베딩 의미 검색)
+          <p className="pt-1 text-center text-xs text-ink-500">
+            유사도는 절대값보다 순위로 보세요 (임베딩 의미 검색)
           </p>
         </div>
       )}
