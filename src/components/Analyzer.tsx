@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import AnalysisView from "@/components/AnalysisView";
+import Icon from "@/components/Icon";
 import { parseKakaoExport } from "@/lib/kakao";
 import type { AnalyzeRequest, StoredSession } from "@/lib/types";
 
@@ -92,24 +93,19 @@ export default function Analyzer({
   return (
     <div className="space-y-6">
       {!result && (
-        <div className="text-center">
-          <h1 className="text-2xl font-extrabold text-slate-800">
-            대화 붙여넣고 마음 읽기 💘
-          </h1>
-          <p className="mt-2 text-sm text-slate-500">
+        <div className="animate-rise pt-4">
+          <h1 className="text-[28px] font-medium leading-tight text-ink-900">대화 붙여넣고 마음 읽기</h1>
+          <p className="mt-2 text-[15px] text-ink-600">
             카톡·DM 대화를 붙여넣으면 호감도, 답장 추천, 위험 신호를 분석해드려요.
           </p>
         </div>
       )}
 
-      <div className="rounded-2xl border border-rose-100 bg-white p-5 shadow-sm">
+      <div className="card p-6">
         {samples && samples.length > 0 && (
-          <div className="mb-4 rounded-xl bg-rose-50/70 p-3">
-            <p className="mb-2 text-sm font-semibold text-slate-700">
-              샘플 대화 넣기{" "}
-              <span className="font-normal text-slate-400">
-                (지어낸 가상 대화예요)
-              </span>
+          <div className="mb-6 rounded-xl bg-ink-50 p-4">
+            <p className="mb-3 text-sm font-medium text-ink-900">
+              샘플 대화 넣기 <span className="font-normal text-ink-500">(지어낸 가상 대화예요)</span>
             </p>
             <div className="flex flex-wrap gap-2">
               {samples.map((s) => (
@@ -123,7 +119,7 @@ export default function Analyzer({
                     setError(null);
                     setResult(null);
                   }}
-                  className="rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-sm text-slate-700 transition hover:border-brand-400 hover:text-brand-600"
+                  className="inline-flex h-8 items-center rounded-lg border border-ink-900/10 bg-white px-3 text-sm text-ink-700 transition-colors duration-150 ease-out hover:border-brand-300 hover:text-brand-600"
                 >
                   {s.label}
                 </button>
@@ -131,22 +127,24 @@ export default function Analyzer({
             </div>
           </div>
         )}
-        <label className="mb-1 block text-sm font-semibold text-slate-700">
-          관계 상태 <span className="font-normal text-slate-400">(선택)</span>
+
+        <label className="mb-2 block text-sm font-medium text-ink-900">
+          관계 상태 <span className="font-normal text-ink-500">(선택)</span>
         </label>
         <input
           value={relationship}
           onChange={(e) => setRelationship(e.target.value)}
           placeholder="예) 소개팅 2번 만남 / 썸 3주차 / 사귀는 중"
-          className="mb-4 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400"
+          className="field mb-6"
         />
 
-        <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-          <label className="text-sm font-semibold text-slate-700">
-            대화 내용 <span className="font-normal text-slate-400">(필수)</span>
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <label className="text-sm font-medium text-ink-900">
+            대화 내용 <span className="font-normal text-ink-500">(필수)</span>
           </label>
-          <label className="cursor-pointer rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-600 transition hover:border-brand-300 hover:text-brand-600">
-            📎 카톡 .txt 올리기
+          <label className="inline-flex h-8 cursor-pointer items-center gap-2 rounded-lg border border-ink-900/10 bg-white px-3 text-sm text-ink-700 transition-colors duration-150 ease-out hover:text-ink-900">
+            <Icon name="paperclip" className="h-4 w-4 text-ink-500" />
+            카톡 .txt 올리기
             <input
               ref={fileInputRef}
               type="file"
@@ -157,57 +155,71 @@ export default function Analyzer({
           </label>
         </div>
         {fileName && (
-          <p className="mb-2 text-xs text-brand-600">
-            📄 {fileName} 불러옴 — 아래에서 내용을 확인/수정할 수 있어요.
+          <p className="mb-2 flex items-center gap-2 text-xs text-ink-700">
+            <Icon name="file" className="h-4 w-4 text-ink-500" />
+            {fileName} 불러옴 · 아래에서 내용을 확인하고 고칠 수 있어요
           </p>
         )}
-        <p className="mb-2 text-xs text-slate-400">
-          카톡 대화방 → 메뉴 → 대화 내보내기(텍스트)로 받은 .txt를 그대로 올리면 자동 정리돼요.
+        <p className="mb-2 text-xs text-ink-500">
+          카톡 대화방 → 메뉴 → 대화 내보내기(텍스트)로 받은 .txt를 그대로 올리면 자동 정리돼요
         </p>
         <textarea
           value={rawText}
           onChange={(e) => setRawText(e.target.value)}
           rows={10}
           placeholder={"카톡 대화를 그대로 붙여넣어 주세요.\n\n예)\n나: 오늘 뭐했어?\n상대: 그냥 집에 있었어ㅎㅎ 너는?\n나: 나도 쉬었지~"}
-          className="w-full resize-y rounded-xl border border-slate-200 px-3 py-2 text-sm leading-relaxed outline-none focus:border-brand-400"
+          className="field resize-y leading-6"
         />
-        <div className="mt-1 text-right text-xs text-slate-400">
-          {rawText.length.toLocaleString()}자
+        <div className="mt-2 flex items-center justify-between text-xs text-ink-500">
+          {localAnalyze ? (
+            <span />
+          ) : (
+            <span className="flex items-center gap-1">
+              <Icon name="lock" className="h-3.5 w-3.5" />
+              개인정보는 자동으로 가려서 보내요
+            </span>
+          )}
+          <span className="tabular-nums">{rawText.length.toLocaleString()}자</span>
         </div>
 
         {error && (
-          <p className="mt-3 rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-600">
-            {error}
-          </p>
+          <p className="mt-4 rounded-[10px] bg-brand-50 px-4 py-3 text-sm text-brand-700">{error}</p>
         )}
 
         <button
           onClick={handleAnalyze}
           disabled={loading || rawText.trim().length < 10}
-          className="mt-4 w-full rounded-xl bg-brand-500 py-3 font-bold text-white transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50"
+          className="btn-primary mt-6 w-full"
         >
-          {loading ? "분석 중… 🔍" : "AI로 분석하기"}
+          {loading ? (
+            <>
+              <Icon name="loader" className="h-[18px] w-[18px] animate-spin" />
+              분석하는 중
+            </>
+          ) : (
+            "AI로 분석하기"
+          )}
         </button>
-        <p className="mt-2 text-center text-xs text-slate-400">
+        <p className="mt-3 text-center text-xs text-ink-500">
           {localAnalyze
-            ? "데모 모드: 샘플 대화를 넣으면 미리 준비한 결과를 보여 드려요."
-            : "무료 분석은 하루 3회예요."}
+            ? "데모 모드: 샘플 대화를 넣으면 미리 준비한 결과를 보여 드려요"
+            : "무료 분석은 하루 3회예요"}
         </p>
       </div>
 
       {result && (
         <>
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-slate-800">분석 결과</h2>
+          <div className="flex items-center justify-between pt-4">
+            <h2 className="text-[20px] font-medium text-ink-900">분석 결과</h2>
             <button
               onClick={() => {
                 setResult(null);
                 setRawText("");
                 setRelationship("");
               }}
-              className="text-sm text-slate-500 hover:text-brand-600"
+              className="inline-flex h-8 items-center rounded-lg border border-ink-900/10 bg-white px-3 text-sm text-ink-700 transition-colors duration-150 ease-out hover:text-ink-900"
             >
-              새 분석 하기 +
+              새 분석 하기
             </button>
           </div>
           <AnalysisView result={result.result} />
@@ -215,11 +227,10 @@ export default function Analyzer({
             <div className="text-center">
               <Link
                 href={`/history/${result.id}`}
-                className="text-sm text-brand-600 hover:underline"
+                className="inline-flex items-center gap-1 text-sm text-brand-600 underline-offset-4 hover:underline"
               >
-                {localAnalyze
-                  ? "기록 화면에서 이 샘플 다시 보기 →"
-                  : "이 분석은 기록에 저장됐어요 →"}
+                {localAnalyze ? "기록 화면에서 이 샘플 다시 보기" : "이 분석은 기록에 저장됐어요"}
+                <Icon name="arrow" className="h-4 w-4" />
               </Link>
             </div>
           )}

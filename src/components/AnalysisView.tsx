@@ -1,44 +1,33 @@
 "use client";
 
 import { useState } from "react";
+import { MyBubble, ScoreRing } from "@/components/ChatParts";
+import Icon from "@/components/Icon";
 import type { AnalysisResult, Signal } from "@/lib/types";
 
-function scoreColor(score: number) {
-  if (score >= 70) return "bg-emerald-500";
-  if (score >= 50) return "bg-amber-500";
-  return "bg-rose-500";
+// 점수 구간별 한 줄 코멘트 (숫자만 보여주면 차갑게 느껴져서)
+function scoreMood(score: number) {
+  if (score >= 80) return "설렘 신호가 많이 보여요";
+  if (score >= 65) return "분위기가 좋아요";
+  if (score >= 50) return "조금 더 지켜봐요";
+  if (score >= 35) return "온도가 살짝 내려갔어요";
+  return "천천히 다시 다가가 봐요";
 }
 
-function ScoreGauge({ score, level }: { score: number; level: string }) {
+const signalStyle: Record<Signal["type"], { label: string; dot: string }> = {
+  positive: { label: "좋은 신호", dot: "bg-emerald-600" },
+  negative: { label: "위험 신호", dot: "bg-red-600" },
+  neutral: { label: "참고", dot: "bg-ink-400" },
+};
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl border border-rose-100 bg-white p-5 shadow-sm">
-      <div className="flex items-end justify-between">
-        <div>
-          <p className="text-sm text-slate-500">호감도 · 대화 흐름 점수</p>
-          <p className="text-4xl font-extrabold text-slate-800">
-            {score}
-            <span className="text-lg font-medium text-slate-400"> / 100</span>
-          </p>
-        </div>
-        <span className="rounded-full bg-brand-50 px-3 py-1 text-sm font-semibold text-brand-600">
-          호감도 {level}
-        </span>
-      </div>
-      <div className="mt-4 h-3 w-full overflow-hidden rounded-full bg-slate-100">
-        <div
-          className={`animate-grow h-full rounded-full ${scoreColor(score)}`}
-          style={{ width: `${score}%` }}
-        />
-      </div>
-    </div>
+    <section className="card p-6">
+      <h3 className="mb-4 text-[16px] font-medium text-ink-900">{title}</h3>
+      {children}
+    </section>
   );
 }
-
-const signalStyle: Record<Signal["type"], { label: string; cls: string; icon: string }> = {
-  positive: { label: "좋은 신호", cls: "bg-emerald-50 text-emerald-700 border-emerald-100", icon: "✅" },
-  negative: { label: "위험 신호", cls: "bg-rose-50 text-rose-700 border-rose-100", icon: "⚠️" },
-  neutral: { label: "참고", cls: "bg-slate-50 text-slate-600 border-slate-200", icon: "ℹ️" },
-};
 
 export default function AnalysisView({ result }: { result: AnalysisResult }) {
   const [copied, setCopied] = useState<number | null>(null);
@@ -54,79 +43,77 @@ export default function AnalysisView({ result }: { result: AnalysisResult }) {
   }
 
   return (
-    <div className="space-y-5">
-      <ScoreGauge score={result.score} level={result.interestLevel} />
-
-      {/* 요약 */}
-      <section className="rounded-2xl border border-rose-100 bg-white p-5 shadow-sm">
-        <h3 className="mb-2 font-bold text-slate-800">🧭 관계 흐름 요약</h3>
-        <p className="whitespace-pre-line leading-relaxed text-slate-700">
-          {result.summary}
-        </p>
+    <div className="animate-rise space-y-4">
+      {/* 점수 */}
+      <section className="card flex flex-col items-center gap-6 p-6 text-center sm:flex-row sm:text-left">
+        <ScoreRing score={result.score} />
+        <div>
+          <p className="text-sm text-ink-500">호감도 · 대화 흐름 점수</p>
+          <p className="mt-2 text-[24px] font-medium leading-tight text-ink-900">{scoreMood(result.score)}</p>
+          <p className="mt-3 text-sm text-ink-600">
+            호감도 <span className="font-medium text-brand-600">{result.interestLevel}</span>
+          </p>
+        </div>
       </section>
 
-      {/* 신호 */}
+      <Section title="관계 흐름 요약">
+        <p className="whitespace-pre-line text-[15px] leading-[26px] text-ink-700">{result.summary}</p>
+      </Section>
+
       {result.signals.length > 0 && (
-        <section className="rounded-2xl border border-rose-100 bg-white p-5 shadow-sm">
-          <h3 className="mb-3 font-bold text-slate-800">🔎 신호 분석</h3>
-          <ul className="space-y-2">
+        <Section title="신호 분석">
+          <ul className="space-y-3">
             {result.signals.map((s, i) => {
               const st = signalStyle[s.type];
               return (
-                <li
-                  key={i}
-                  className={`flex items-start gap-2 rounded-xl border px-3 py-2 text-sm ${st.cls}`}
-                >
-                  <span aria-hidden>{st.icon}</span>
+                <li key={i} className="flex gap-3 text-[15px] leading-6 text-ink-700">
+                  <span className={`mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full ${st.dot}`} aria-hidden />
                   <span>
-                    <b className="mr-1">[{st.label}]</b>
+                    <span className="mr-2 font-medium text-ink-900">{st.label}</span>
                     {s.text}
                   </span>
                 </li>
               );
             })}
           </ul>
-        </section>
+        </Section>
       )}
 
-      {/* 답장 추천 */}
+      {/* 답장 추천: 내가 보낼 카톡 말풍선으로 보여준다 */}
       {result.replySuggestions.length > 0 && (
-        <section className="rounded-2xl border border-rose-100 bg-white p-5 shadow-sm">
-          <h3 className="mb-3 font-bold text-slate-800">💬 답장 추천</h3>
-          <div className="space-y-3">
+        <section className="card overflow-hidden">
+          <h3 className="px-6 pt-6 text-[16px] font-medium text-ink-900">이렇게 답해 보세요</h3>
+          <div className="mt-4 space-y-4 bg-ink-100 px-6 py-6">
             {result.replySuggestions.map((r, i) => (
-              <div
-                key={i}
-                className="rounded-xl border border-slate-100 bg-slate-50 p-3"
-              >
-                <div className="mb-1 flex items-center justify-between">
-                  <span className="rounded-full bg-brand-100 px-2 py-0.5 text-xs font-semibold text-brand-700">
-                    {r.tone}
-                  </span>
+              <div key={i}>
+                <div className="mb-2 flex items-center justify-end gap-2">
+                  <span className="text-xs text-ink-500">{r.tone}</span>
                   <button
                     onClick={() => copy(r.content, i)}
-                    className="text-xs text-slate-400 hover:text-brand-600"
+                    className="inline-flex h-6 items-center gap-1 rounded-md bg-white px-2 text-xs text-ink-600 transition-colors duration-150 ease-out hover:text-ink-900"
                   >
-                    {copied === i ? "복사됨!" : "복사"}
+                    <Icon name={copied === i ? "check" : "copy"} className="h-3.5 w-3.5" />
+                    {copied === i ? "복사됨" : "복사"}
                   </button>
                 </div>
-                <p className="text-slate-800">{r.content}</p>
+                <MyBubble>{r.content}</MyBubble>
               </div>
             ))}
           </div>
         </section>
       )}
 
-      {/* 다음 행동 */}
       {result.nextActions.length > 0 && (
-        <section className="rounded-2xl border border-rose-100 bg-white p-5 shadow-sm">
-          <h3 className="mb-3 font-bold text-slate-800">👉 다음 행동 추천</h3>
-          <ul className="list-inside list-disc space-y-1 text-slate-700">
+        <Section title="다음 행동 추천">
+          <ol className="space-y-3">
             {result.nextActions.map((a, i) => (
-              <li key={i}>{a}</li>
+              <li key={i} className="flex gap-3 text-[15px] leading-6 text-ink-700">
+                <span className="w-4 shrink-0 text-right tabular-nums text-ink-500">{i + 1}</span>
+                {a}
+              </li>
             ))}
-          </ul>
-        </section>
+          </ol>
+        </Section>
       )}
     </div>
   );
